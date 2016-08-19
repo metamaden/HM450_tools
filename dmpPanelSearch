@@ -1,4 +1,4 @@
-dmpPanelSearch <- function(gset,dmplistrange=20,testgroups,level1name,comb.df.n=NULL,nprobespanel=5,nprobescutoff=3,betacutoff=0.5){
+dmpPanelSearch <- function(gset,dmplistrange=20,dmpprobelist=NULL,testgroups,level1name,comb.df.n=NULL,nprobespanel=5,nprobescutoff=3,betacutoff=0.5){
   # gset is GenomicRatioSet of samples from which to perform DMP analysis and assemble/test panels
   # dmplistrange is number of dmps from which to assemble random panels
   # testgroups is varname with identifiers for all cancer samples' mgroups
@@ -8,19 +8,29 @@ dmpPanelSearch <- function(gset,dmplistrange=20,testgroups,level1name,comb.df.n=
   # nprobescutoff is minimum count of probes meeting betacutoff for sample to be "positive" in panel test
   # betacutoff is methylation value cutoff for probe to be considered "positive" in sample for panel test
   
-  require(minfi)
-  
   bvals.train <- getBeta(gset) 
-  testgroups <- ifelse(testgroups==level1name,1,0)
-  dmp.calc <- dmpFinder(bvals.train,testgroups,type="categorical")
-  print(paste0("From DMP analysis, you are choosing the ",dmplistrange," top DMPs with qvalues ranging from ",
-               range(dmp.calc[1:dmplistrange,4])[1]," to ",range(dmp.calc[1:dmplistrange,4])[2]," for panel assembly"))
+  testgroups <- ifelse(testgroups %in% level1name,1,0)
+  if(is.null(dmpprobelist)){
+    print(paste0("Running DMP test..."))
+    dmp.calc <- dmpFinder(bvals.train,testgroups,type="categorical")
+    print(paste0("From DMP analysis, you are choosing the ",dmplistrange," top DMPs with qvalues ranging from ",
+                 range(dmp.calc[1:dmplistrange,4])[1]," to ",range(dmp.calc[1:dmplistrange,4])[2]," for panel assembly"))
+    # take top where samples are sorted by increasing q-val
+    top.dmp.list <- rownames(dmp.calc[1:dmplistrange,])
+    # assemble probe panels
+    comb.df <- t(combn(c(top.dmp.list),nprobespanel)) #==========> CHANGE PANEL SIZE HERE
+    print(paste0("Out of ",dmplistrange," DMPs, ",nrow(comb.df)," panels of ",nprobespanel," probes were assembled"))
+  }
+  else{
+    print(paste0("Using user-defined list of ",length(dmpprobelist)," probes for panel assembly."))
+    top.dmp.list <- dmpprobelist
+    # assemble probe panels
+    comb.df <- t(combn(c(top.dmp.list),nprobespanel)) #==========> CHANGE PANEL SIZE HERE
+    print(paste0("Out of ",length(dmpprobelist)," provided probes, ",nrow(comb.df)," panels of ",nprobespanel," probes were assembled"))
+    
+  }
   
-  # take top where samples are sorted by increasing q-val
-  top.dmp.list <- rownames(dmp.calc[1:dmplistrange,])
-  # assemble probe panels
-  comb.df <- t(combn(c(top.dmp.list),nprobespanel)) #==========> CHANGE PANEL SIZE HERE
-  print(paste0("Out of ",dmplistrange," DMPs, ",nrow(comb.df)," panels of ",nprobespanel," probes were assembled"))
+  
   
   if(!is.null(comb.df.n)){ #==========> TAKE RANDOM SAMPLE OF PANELS?
     print(paste0("You are selecting ",comb.df.n," random panel(s) from ",nrow(comb.df)," total panel combinations"))
@@ -42,8 +52,7 @@ dmpPanelSearch <- function(gset,dmplistrange=20,testgroups,level1name,comb.df.n=
   return.df <- as.data.frame(matrix(,nrow=nrow(comb.df),ncol=ncol(gset)+2))
   colnames(return.df) <- c(colnames(gset),"sens","spec")
   
-  # panel criterium 1: score of at least 3 probes above threshold
-  # panel criterium 2 : threshold of Beta-val>0.5
+  print(paste0("Calculating panel sensitivity and specificity..."))
   
   for (j in 1:nrow(comb.df)){
     panelmatrix <- binarymatrix[,colnames(binarymatrix) %in% comb.df[j,]]
@@ -77,7 +86,7 @@ dmpPanelSearch <- function(gset,dmplistrange=20,testgroups,level1name,comb.df.n=
         " and maximum specificity of ",max(return.df$sens),
         ". Among optimal panels, there are a total of ",nrow(return.df[return.df$spec==max(return.df$spec),])," panels with maximum specificity, where the best panel shows specificity = ",max(return.df$spec)," and sensitivity = ",max(return.df[return.df$spec==max(return.df$spec),]$sens),
         ", and there are a total of ",nrow(return.df[return.df$sens==max(return.df$sens),])," panels with maximum sensitivity, where the best panel shows sensitivity = ",max(return.df$sens)," and specificity = ",max(return.df[return.df$sens==max(return.df$sens),]$spec),"."))
-  
+  print(paste0("...Done!"))
   return(return.df)
 }
 
