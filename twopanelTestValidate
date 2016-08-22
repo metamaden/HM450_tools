@@ -21,21 +21,20 @@ twopanelTestValidate <- function(betaset,panel1set,panel2set,
 # probecount1 = minimum number of probes needed to meet betathreshold1 to be called 1 in panel 1 test
 # probecount2 = min probe number as in probecount1 for panel 2 test
 
-  if(!length(refvar)==nrow(betaset)){
+if(!length(refvar)==nrow(betaset)){
       print("Choose a valid refvar for all samples in beta value matrix!")
-    }
+  }
 
   refvar[!refvar %in% c(level2var,level1var)] <- 0
   refvar[refvar==level1var] <- 1
   refvar[refvar==level2var] <- 2
   refvar <- as.numeric(refvar)
 
-  return.df.twopanel <- matrix(nrow=1,ncol=6)
-  colnames(return.df.twopanel) <- c("panel1","test1panelcall","panel2","test2panelcall","sens","spec")
+  return.df.twopanel <- matrix(nrow=1,ncol=4)
+  colnames(return.df.twopanel) <- c("panel1","panel2","sens","spec")
   print(paste0("Calculating sens/spec of ",length(panel1set)*length(panel2set)," two-panel tests"))
   for(i in 1:length(panel1set)){
-    return.set <- matrix(nrow=1,ncol=7)
-    colnames(return.set) <- c("panel1","panel2","test1panelcall","test2panelcall","panelcall12","sens","spec")
+    return.set <- matrix(nrow=1,ncol=4)
     for(j in 1:length(panel2set)){
       betaiter <- as.data.frame(betaset[,colnames(betaset) %in% unique(unlist(strsplit(c(panel1set[i],panel2set[j]),";")))])
     
@@ -50,21 +49,17 @@ twopanelTestValidate <- function(betaset,panel1set,panel2set,
       betaiter$test2panelcall <- apply(betaiter[,colnames(betaiter) %in% unlist(strsplit(panel2set[j],";"))],1,function(x) ifelse(length(x[x>=betathreshold2])>=probecount2,1,0))
       
       betaiter$panelcall12 <- 0
-      betaiter$panelcall12 <- ifelse(betaiter$test2panelcall==1 & betaiter$test1panelcall==1 <- 1,2,
-                                     ifelse(betaiter$test2panelcall==1,2,
-                                     ifelse(betaiter$test2panelcall==0 & betaiter$test1panelcall==1,1,0)))
+      betaiter$panelcall12 <- ifelse(betaiter$test2panelcall==1 & betaiter$test1panelcall==1, 2,ifelse(betaiter$test2panelcall==1,2,ifelse(betaiter$test2panelcall==0 & betaiter$test1panelcall==1,1,0)))
       
       betaiter$sens <- nrow(betaiter[betaiter$panelcall12==1 & betaiter$ref==1 | betaiter$panelcall12==2 & betaiter$ref==2,])/length(refvar[refvar %in% c(1,2)])
       betaiter$spec <- nrow(betaiter[betaiter$test1panelcall==0 & betaiter$ref==0| betaiter$test2panelcall==0 & betaiter$ref==0,])/length(refvar[refvar==0])
 
       if(j==1){
         return.set <- as.matrix(data.frame(betaiter[1,]$panel1,betaiter[1,]$panel2,
-                                  betaiter[1,]$test1panelcall,betaiter[1,]$test2panelcall,
-                                  betaiter[1,]$panelcall12,betaiter[1,]$sens,betaiter[1,]$spec))
+                                  betaiter[1,]$sens,betaiter[1,]$spec))
       } else{
         add.set <- as.matrix(data.frame(betaiter[1,]$panel1,betaiter[1,]$panel2,
-                                        betaiter[1,]$test1panelcall,betaiter[1,]$test2panelcall,
-                                        betaiter[1,]$panelcall12,betaiter[1,]$sens,betaiter[1,]$spec))
+                                        betaiter[1,]$sens,betaiter[1,]$spec))
         
         return.set <- rbind(return.set,add.set)
       }
@@ -76,6 +71,7 @@ twopanelTestValidate <- function(betaset,panel1set,panel2set,
     } else{
       return.df.twopanel <- rbind(return.df.twopanel,return.set)
     }
+    colnames(return.df.twopanel) <- c("panel1","panel2","sens","spec")
   }
   print("...Done!")
   print(paste0("Among ",
