@@ -86,7 +86,7 @@ dmpPanelSearch <- function(gset,dmplistrange=20,dmpprobelist=NULL,testgroups,lev
   }
   # assign rownames to results df (assemble character string then assess in console)
   rownamevar <- "paste0(comb.df[,1],';',"
-  for(i in 3:ncol(comb.df)-1){
+  for(i in 2:ncol(comb.df)-1){
     rownamevar <- paste0(rownamevar,"comb.df[,",i,"],';',")
   }
   rownamevar <- paste0(rownamevar,"comb.df[,",ncol(comb.df),"])")
