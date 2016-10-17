@@ -3,7 +3,7 @@
 # Source/Acknowledgements: Base code courtesy of Dr. Georg Leubeck
 
 GENE_methyexpr_corr = function(gene="SOX15", dat.expr=EXPR, dat.mex=gse.krause,
-                            ids.mex=mex.array.ids, ids.expr=arrayGSE.EAC, log2FC=TRUE) {
+                            ids.mex=mex.array.ids, ids.expr=arrayGSE.EAC, log2FC=TRUE, ctfilter=NULL) {
 
     str1 = paste0("(^|;)",gene,"(;|$)")
     Isl = unique(manifestData[grepl(str1,manifestData$UCSC_RefGene_Name),"Islands_Name"])
@@ -33,6 +33,16 @@ GENE_methyexpr_corr = function(gene="SOX15", dat.expr=EXPR, dat.mex=gse.krause,
       y = 2^dat.expr[gene,ids.expr]  
     } else{
       y = dat.expr[gene,ids.expr]
+    }
+    
+    # apply count filter before analysis
+    if(!is.null(ctfilter)){
+      x <- x[which(y>=ctfilter)]
+      y <- y[y>=ctfilter]
+    if(length(y)<2){
+      message("ERROR: Less than two samples have gene counts greater than or equal to your filter!")
+      return()
+      }
     }
     
     plot(x,y,pch=19,xlim=c(.0,.9),xlab="beta-value",ylab="intensity",
