@@ -2,8 +2,8 @@
 #
 # Source/Acknowledgements: Base code courtesy of Dr. Georg Leubeck
 
-GENE_methyexpr_corr = function(gene="SOX15", dat.expr=EXPR, dat.mex=gse.krause,
-                            ids.mex=mex.array.ids, ids.expr=arrayGSE.EAC, log2FC=TRUE, ctfilter=NULL) {
+GENE_methyexpr_corr = function(gene="SOX15", dat.expr=ExpressionMatrix, dat.mex=MethylationSet,
+                            ids.mex=MethylationArrayIDs, ids.expr=ExpressionArrayIDs, log2FC=TRUE, ctfilter=NULL) {
 
     str1 = paste0("(^|;)",gene,"(;|$)")
     Isl = unique(manifestData[grepl(str1,manifestData$UCSC_RefGene_Name),"Islands_Name"])
