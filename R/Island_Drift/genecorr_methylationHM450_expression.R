@@ -1,3 +1,6 @@
+# Purpose: calculate correlation of mean drift island methylation (HM450 Beta-values) and overlapping gene expression (count intensity, arbitrary platform)  
+# Source/Credit: Dr. Georg Leubeck provided base code and dependency functions
+
 GENE_methyexpr_corr = function(gene="SOX15", dat.expr=EXPR, dat.mex=gse.krause,
                                ids.mex=mex.array.ids, ids.expr=arrayGSE.EAC, 
                                log2FC=TRUE, ctfilter=NULL, lgndcex=1) {
