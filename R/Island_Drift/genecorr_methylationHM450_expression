@@ -2,8 +2,8 @@
 #
 # Source/Acknowledgements: Base code courtesy of Dr. Georg Leubeck
 
-GENE_gexmex_corr = function(gene="SOX15", dat.gex=GEX, dat.mex=gse.krause,
-                            ids.mex=mex.array.ids, ids.gex=arrayGSE.EAC) {
+GENE_methyexpr_corr = function(gene="SOX15", dat.expr=EXPR, dat.mex=gse.krause,
+                            ids.mex=mex.array.ids, ids.expr=arrayGSE.EAC, log2FC=TRUE) {
 
     str1 = paste0("(^|;)",gene,"(;|$)")
     Isl = unique(manifestData[grepl(str1,manifestData$UCSC_RefGene_Name),"Islands_Name"])
@@ -28,13 +28,19 @@ GENE_gexmex_corr = function(gene="SOX15", dat.gex=GEX, dat.mex=gse.krause,
       x = (out$Mvals)
       cat('number of unique islands for gene',gene,' ',1,'\n')
     }
-    y = 2^dat.gex[gene,ids.gex]
+    # convert from log2FC to counts
+    if(log2FC==TRUE){
+      y = 2^dat.expr[gene,ids.expr]  
+    } else{
+      y = dat.expr[gene,ids.expr]
+    }
+    
     plot(x,y,pch=19,xlim=c(.0,.9),xlab="beta-value",ylab="intensity",
     main=paste(gene,Isl))
     lines(loess.smooth(x,y,span=.8),lwd=2,lty=3)
     tmp = cor.test(as.numeric(x),as.numeric(y))
     corr[1] = tmp$estimate; pval[1] = tmp$p.value
-    cat(out$islands[1],' ',corr[1],pval[1],'\n')
+    cat(out$islands[1],'\nCorrelation Results: Pearson R = ',corr[1],', p-val: ',pval[1],'\n')
     
     if(!is.null(nr)) {
       for(i in 2:nr) {
