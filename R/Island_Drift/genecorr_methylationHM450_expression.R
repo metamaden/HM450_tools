@@ -1,57 +1,22 @@
 # Purpose: calculate correlation of mean drift island methylation (HM450 Beta-values) and overlapping gene expression (count intensity, arbitrary platform)  
 # Source/Credit: Dr. Georg Leubeck provided base code and dependency functions
 
-GENE_methyexpr_corr = function(gene="SOX15", dat.expr=EXPR, dat.mex=gse.krause,
-                               ids.mex=mex.array.ids, ids.expr=arrayGSE.EAC, 
+# ARGUMENTS
+# gene : gene ID(s) as character string or list of character strings (must be RefGene format and exist in methylation annotation and expression data rownames)
+# dat.expr : expression data (counts or log2FC) as a matrix or data frame, rownames are gene IDs and colnames are sample IDs (order and membership identical to methylation data)
+# dat.mex : methylation minfi object (ie. GenomicRatioSet, MethylationSet, etc.) where colnames/samples/arrays are identical/ordered the same as columns in expression matrix
+# manifestData : manifest for HM450 array corresponding to dat.mex object (rownames are probes)
+# ids.mex : identifiers for samples in methylation data (ordered as in dat.mex)
+# ids.expr : identifiers for samples in expression data (ordered as in dat.expr)
+# log2FC : is expression data in log2FC or counts format?
+# ctfilter : what count filter should be used, if any, on expression data?
+# lgndcex : what size should legends be? 
+
+GENE_methyexpr_corr = function(gene="SOX15", dat.expr=dat.expr, dat.mex=dat.mex, 
+                               manifestData=as.data.frame(getManifest(dat.mex)),
+                               ids.mex=ids.mex, ids.expr=ids.expr, 
                                log2FC=TRUE, ctfilter=NULL, lgndcex=1) {
-  eval(parse(text=paste0("par(mfrow=c(",length(gene),",",2,"))")))
-  for(k in 1:length(gene)){
   
-    g <- gene[k]
-    message("Current Gene ID: '",g,"'")
-    str1 = paste0("(^|;)",g,"(;|$)")
-    
-    if(!g %in% rownames(dat.expr)|nrow(manifestData[grepl(str1,manifestData$UCSC_RefGene_Name),])==0){
-      message("ERROR: Gene ID '",g,"' not in both expression and methylation data!\nSkipping...\n###")
-    } else{
-      message("Analyzing Gene ID '",g,"'...")
-    
-      Isl = unique(manifestData[grepl(str1,manifestData$UCSC_RefGene_Name),"Islands_Name"])
-      
-      if(length(intersect(Isl,ILS.hypo.drift))==0){
-        message("No drift islands in provided list overlap gene '",g,"',\nSkipping...\n####")
-      } else{
-      
-        Isl = intersect(Isl,ILS.hypo.drift) # allows only islands that have a least one drift CpG
-  
-        cpgs.GENE = manifestData[grepl(str1,manifestData$UCSC_RefGene_Name),"Name"]
-        isl.GENE = manifestData[cpgs.GENE,"Islands_Name"]
-    
-        # get beta values and island/gene info for HM450 array
-        dat.GENE = getBeta(dat.mex[cpgs.GENE,ids.mex])
-        out = CpGisl.level.info(set = Isl, isls = isl.GENE, cpgs = cpgs.GENE, dat=dat.GENE) 
-        nr =  nrow(out$Mvals)
-        tmp = message("All Genes Overlapping Methylation Probes at Islands Analyzed...\n", out$genes)
-    
-      
-        if(!is.null(nr)) {
-         x = (out$Mvals[1,])
-         message('number of unique islands for gene ',g,': ',nr,'\n')
-        } else {
-         x = (out$Mvals)
-         message('Number of unique islands for gene ',g,': ',1,'\n')
-        }
-    
-        # convert from log2FC to counts
-        if(log2FC==TRUE){
-          y = 2^dat.expr[g,ids.expr]  
-        } else{
-          y = dat.expr[g,ids.expr]
-        }
-  
-GENE_methyexpr_corr = function(gene="SOX15", dat.expr=EXPR, dat.mex=gse.krause,
-                               ids.mex=mex.array.ids, ids.expr=arrayGSE.EAC, 
-                               log2FC=TRUE, ctfilter=NULL, lgndcex=1) {
   eval(parse(text=paste0("par(mfrow=c(",length(gene),",",2,"))")))
   for(k in 1:length(gene)){
   
