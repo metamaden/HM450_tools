@@ -13,7 +13,7 @@ x <- levels(as.factor(a))
 eval.clu <- "matrix(c("
 for(i in 1:(length(x)-1)){eval.clu <- paste(eval.clu,paste("rep(names(a)[[",i,"]], length(a[[",i,"]]))",sep=""),collapse=",")}
 eval.clu <- paste(eval.clu,paste("rep(names(a)[[",length(x),"]], length(a[[",length(x),"]]))))",sep=""),collapse=",")
-eval(parse(text=paste0(eval.clu)))
+eval(parse(text=paste0("clu <- eval.clu")))
 
 # example clu:
 #clu <- matrix(c(rep(names(a)[[1]],
