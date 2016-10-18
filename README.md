@@ -14,6 +14,7 @@ R resources for methylation data, generally contingent on minfi package objects.
 ## R Packages
 ### Preprocessing/QC
 1. Minfi
+
 ### Analysis
 1. Minfi (again!)
 2. Base R graphics
