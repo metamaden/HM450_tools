@@ -7,21 +7,34 @@
 # exprset : matrix of count data, with rows uniquely identifying RefGene IDs
 # bpwin : basepair window
 # velnames : list of character strings for VELs to use (FORMATTED: "chr#:#####-######_[gain/loss]")
+# gainloss : one of either "gain", "loss", or "both", to determine what subset of VELs is selected (looking at end characters)
 # hm450rgn : what gene regions should filtered probes map to? Default at conservative promoter region probe set, c("TSS1500"|"TSS200")
+# transcriptID : if NULL, is made on the fly, otherwise is a list/vector by probe of "genename"+"_"+"gene-region", with names as probe IDs and ordered identically to anno
 
-velWindowCor.me <- function(anno=anno, betaset=betaset, 
+velwindow.cor.me <- function(anno=anno, betaset=betaset, 
                              exprset=exprset, bpwin=10000, 
-                             velnames=velnames, 
-                             hm450rgn=c("(TSS200|TSS1500)")){
+                             velnames=velnames, gainloss="gain", 
+                             hm450rgn=c("(TSS200|TSS1500)"),
+                             transcriptID.all=NULL){
   
-  require(GenomicRanges)
-  require(rtracklayer)
-
-  
+  # make annotation a GRanges object for quick genomic overlap assessment
   anno.hm450.gr <- GRanges(seqnames=anno$chr, 
                          strand = anno$strand, 
                          ranges = IRanges(start=anno$pos,end=anno$pos+1),
                          probename=anno$Name,chr=anno$chr)
+  
+  # assess gainloss specification
+  if(gainloss=="gain"){
+    velnames.old <- velnames
+    velnames <- velnames.old[substr(velnames.old,nchar(velnames.old)-5,nchar(velnames.old))=="_gain"]
+    message("Of ",length(velnames.old)," inputted VELs, assessing ",length(velnames)," gains")
+  }
+  if(gainloss=="loss"){
+    velnames.old <- velnames
+    velnames <- velnames.old[substr(velnames.old,nchar(velnames.old)-5,nchar(velnames.old))=="_loss"]
+    message("Of ",length(velnames.old)," inputted VELs, assessing ",length(velnames)," losses")
+  }
+  
   # get VELs to analyze
   vel.list <- substr(velnames,1,nchar(velnames)-5)
   # seed main.set to return
@@ -41,14 +54,12 @@ velWindowCor.me <- function(anno=anno, betaset=betaset,
   
     if(startrange<0){
        startrange <- min(getAnnotation(gset[getAnnotation(gset)$chr==chr.vel,])$pos)
-  
        }
     endrange <- end+window
-  
     if(endrange>max(anno[anno$chr==chr.vel,]$pos)){
       endrange <- max(anno[anno$chr==chr.vel,]$pos)
-  
-      }
+    }
+    
     # take probes in VEL and within ranges outside...
     # probes in the window surrounding VEL
     probeset.gr.window <- subsetByOverlaps(anno.hm450.gr[anno.hm450.gr$chr==chr.vel,],
@@ -69,11 +80,16 @@ velWindowCor.me <- function(anno=anno, betaset=betaset,
     # wrangle unique transcript labels correctly matching geneID+geneRgn
     windowpattern <- paste0("(^|;)(",paste(genes.window,collapse="|",sep=""),")(;|$)")
     anno.goi <- anno[grepl(windowpattern,anno$UCSC_RefGene_Name),]
-    genes.window.structured <- strsplit(anno.goi$UCSC_RefGene_Name,";")
-    genergn.window.structured <- strsplit(anno.goi$UCSC_RefGene_Group,";")
-    anno.goi$transcriptID <- ""
-    for(probe in 1:length(genes.window.structured)){
-      anno.goi[probe,]$transcriptID <- paste(unlist(genes.window.structured[probe]),"_",unlist(genergn.window.structured[probe]),collapse=";",sep="")
+    if(is.null(transcriptID.all)){
+      genes.window.structured <- strsplit(anno.goi$UCSC_RefGene_Name,";")
+      genergn.window.structured <- strsplit(anno.goi$UCSC_RefGene_Group,";")
+      transcriptID.genes <- ""
+      for(probe in 1:length(genes.window.structured)){
+        transcriptID.genes[probe] <- paste(unlist(genes.window.structured[probe]),"_",unlist(genergn.window.structured[probe]),collapse=";",sep="")
+      }
+      names(transcriptID.genes) <- rownames(anno.goi)
+    } else{
+      transcriptID.genes <- transcriptID.all[names(transcriptID.all) %in% rownames(anno.goi)]
     }
     
     # inform on gene-VEL overlaps detected
@@ -91,9 +107,11 @@ velWindowCor.me <- function(anno=anno, betaset=betaset,
       return.set <- matrix(nrow=length(genes.window),ncol=9)
       class(return.set)
       colnames(return.set) <- c("Gene_ID","VEL_ID",paste0("n_hm450probes_velrgn_",bpwin,"bp_window"),"n_hm450probes_genergn","vel_xbeta","region_xbeta","gene_expr_ct","vel_betas","genergn_betas")
+      
       # fill out return.set
       return.set[,2] <- vel.list[j] # return set col 2
       return.set[,3] <- nrow(anno.set.window) # return set col 3
+      
       # iterate over all genes at or within window range of VEL...
       velbeta <- betaset[names(betaset) %in% probeset.gr.vel$probename]
     
@@ -101,6 +119,7 @@ velWindowCor.me <- function(anno=anno, betaset=betaset,
         return.set[,5] <- as.numeric(mean(velbeta,na.rm=TRUE)) # return.set col 5
         return.set[,8] <- paste(paste0(names(velbeta),"=",velbeta,collapse=";")) # return.beta col 8
         
+        #////////////////////////////////////////////
         # iterate over covered genes for return.set
         for(i in 1:nrow(return.set)){
          igene <- return.set[i,1] <- as.character(unique(unlist(genes.window)))[i] # return.set col 1
@@ -112,9 +131,9 @@ velWindowCor.me <- function(anno=anno, betaset=betaset,
          matchpattern <- c()
          for(rgn in 1:length(hm450rgn)){matchpattern[rgn] <- paste0(igene,"_",hm450rgn[rgn])}
          matchpattern <- paste0("(",paste(matchpattern,sep="",collapse="|"),")")
-         rgnprobes.gene <- anno.goi[grep(matchpattern,anno.goi$transcriptID),] # subset on genergn argument hm450rgn
-         return.set[i,4] <- as.numeric(nrow(rgnprobes.gene)) # return.set col 4
-         ibeta <- betaset[names(betaset) %in% rownames(rgnprobes.gene)]
+         transcriptID.gene <- transcriptID.genes[grep(matchpattern,transcriptID.genes)] # subset on genergn argument hm450rgn
+         return.set[i,4] <- length(transcriptID.gene) # return.set col 4
+         ibeta <- betaset[names(betaset) %in% names(transcriptID.gene)]
           
          if(length(ibeta)>1 & igene %in% names(exprset)){
            return.set[i,6] <- as.numeric(mean(ibeta,na.rm=TRUE))
