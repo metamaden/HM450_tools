@@ -4,8 +4,8 @@
 # requires: Illumina HM450 annotation deployed in minfi library. 
 
 # anno = Illumina annotation with UCSC_RefGene_Name/Group variables
-refgene_names <- strsplit(anno.goi$UCSC_RefGene_Name,";") 
-refgene_groups <- strsplit(anno.goi$UCSC_RefGene_Group,";")
+refgene_names <- strsplit(anno$UCSC_RefGene_Name,";") 
+refgene_groups <- strsplit(anno$UCSC_RefGene_Group,";")
 transcriptID <- ""
 
 # get transcriptID as composite variable
