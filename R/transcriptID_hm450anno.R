@@ -10,7 +10,7 @@ transcriptID <- ""
 
 # get transcriptID as composite variable
 for(probe in 1:length(refgene_names)){
-  transcriptID <- paste(unlist(refgene_names[probe]),"_",unlist(refgene_groups[probe]),collapse=";",sep="")
+  transcriptID[probe] <- paste(unlist(refgene_names[probe]),"_",unlist(refgene_groups[probe]),collapse=";",sep="")
 }
 
 # SC: recover UCSC_RefGene_Name variable from transcriptID
