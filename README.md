@@ -39,9 +39,5 @@ Helpful Bioconductor packages for accessing GEO data include [GEOquery](https://
 3b. [pvclust](https://cran.r-project.org/web/packages/pvclust/index.html)
 4. [ggplot2](https://cran.r-project.org/web/packages/ggplot2/index.html)
 
-# The State of The Science
-
-
-
 
 
