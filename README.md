@@ -16,7 +16,7 @@ Filtering removes probes that have experimentally been demonstrated to show bias
 
 ## Open Access Datasets
 ### The Cancer Genome Atlas (TCGA)
-The Cancer Genome Atlas, now hosted by the Genomics Data Commons (https://gdc-portal.nci.nih.gov/), is an extensive and widely-cited repository facilitated by an international consortia of reputed laboratories and institutions. It combines integrated data types (SNV, CNV, methylation, expression, clinical...) for matched tumor and normal-matched patient samples from over a dozen difference cancer types. TCGA is commonly used for validation of methylation findings and is a boon for omics and oncological computation. 
+The Cancer Genome Atlas, now hosted by the (Genomics Data Commons)[https://gdc-portal.nci.nih.gov/], is an extensive and widely-cited repository facilitated by an international consortia of reputed laboratories and institutions. It combines integrated data types (SNV, CNV, methylation, expression, clinical...) for matched tumor and normal-matched patient samples from over a dozen difference cancer types. TCGA is commonly used for validation of methylation findings and is a boon for omics and oncological computation. 
 
 Some helpful resources include the barcoding scheme (https://wiki.nci.nih.gov/display/TCGA/TCGA+barcode) and data dictionaries. Helpful R Bioconductor packages include RTCGABIOLINKS (https://www.bioconductor.org/packages/release/bioc/html/TCGAbiolinks.html). Firehose (https://gdac.broadinstitute.org/) is a resource run by BROAD Institute that periodically publishes automated reports and preprocessed data using cited methods. 
 
