@@ -18,12 +18,12 @@ Filtering removes probes that have experimentally been demonstrated to show bias
 ### The Cancer Genome Atlas (TCGA)
 The Cancer Genome Atlas, now hosted by the [Genomics Data Commons](https://gdc-portal.nci.nih.gov/), is an extensive and widely-cited repository facilitated by an international consortia of reputed laboratories and institutions. It combines integrated data types (SNV, CNV, methylation, expression, clinical...) for matched tumor and normal-matched patient samples from over a dozen difference cancer types. TCGA is commonly used for validation of methylation findings and is a boon for omics and oncological computation. 
 
-Some helpful resources include the barcoding scheme (https://wiki.nci.nih.gov/display/TCGA/TCGA+barcode) and data dictionaries. Helpful R Bioconductor packages include RTCGABIOLINKS (https://www.bioconductor.org/packages/release/bioc/html/TCGAbiolinks.html). Firehose (https://gdac.broadinstitute.org/) is a resource run by BROAD Institute that periodically publishes automated reports and preprocessed data using cited methods. 
+Some helpful resources include the [barcoding scheme](https://wiki.nci.nih.gov/display/TCGA/TCGA+barcode) and data dictionaries. Helpful R Bioconductor packages include [R TCGABIOLINKS](https://www.bioconductor.org/packages/release/bioc/html/TCGAbiolinks.html). [Firehose](https://gdac.broadinstitute.org/) is a resource run by BROAD Institute that periodically publishes automated reports and preprocessed data using cited methods. 
 
 ### Gene Expression Omnibus (GEO)
 The Gene Expression Omnibus, or GEO, is a curated repository commonly used by non-consortium labs to publish their data. It utilizes a regularized ID system to link samples and experiments to relevant data platforms and manifests. 
 
-Helpful Bioconductor packages for accessing GEO data include GEOquery (https://bioconductor.org/packages/devel/bioc/html/GEOquery.html).
+Helpful Bioconductor packages for accessing GEO data include [GEOquery](https://bioconductor.org/packages/devel/bioc/html/GEOquery.html).
 
 ### Array Express
 
@@ -35,9 +35,9 @@ Helpful Bioconductor packages for accessing GEO data include GEOquery (https://b
 1. Minfi (again!) : Check out mdsPlot() and densityPlot()
 2. Base R (inc. graphics) : heatmap(); cor.test(); t.test(); plot(); hist(); anova()
 3. Clustering packages :
-3a. RPMM (https://cran.r-project.org/web/packages/RPMM/index.html)
-3b. pvclust (https://cran.r-project.org/web/packages/pvclust/index.html)
-4. ggplot2 (https://cran.r-project.org/web/packages/ggplot2/index.html)
+3a. [RPMM](https://cran.r-project.org/web/packages/RPMM/index.html)
+3b. [pvclust](https://cran.r-project.org/web/packages/pvclust/index.html)
+4. [ggplot2](https://cran.r-project.org/web/packages/ggplot2/index.html)
 
 # The State of The Science
 
