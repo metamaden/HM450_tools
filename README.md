@@ -36,8 +36,10 @@ Helpful Bioconductor packages for accessing GEO data include [GEOquery](https://
 2. Base R (inc. graphics) : heatmap(); cor.test(); t.test(); plot(); hist(); anova()
 3. Clustering packages :
 3a. [RPMM](https://cran.r-project.org/web/packages/RPMM/index.html)
-3b. [pvclust](https://cran.r-project.org/web/packages/pvclust/index.html)
-4. [ggplot2](https://cran.r-project.org/web/packages/ggplot2/index.html)
-
+3b. [pvclust](https://cran.r-project.org/web/packages/pvclust/index.html) 
+### Graphing
+4. [ggplot2](https://cran.r-project.org/web/packages/ggplot2/index.html) for complex graphics
+5. [ggbio](http://bioconductor.org/packages/release/bioc/html/ggbio.html) for karyographs (single or multiple chromosome tracks)
+5. [Gviz](https://bioconductor.org/packages/release/bioc/html/Gviz.html) for ideograms (single chromosome tracks)
 
 
