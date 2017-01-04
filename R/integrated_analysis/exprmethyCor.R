@@ -6,7 +6,7 @@
 # cormethod = method to be used, options in helpfile of cor.test
 # nprobecut = minimum probes mapping to gene of interest
 # nsampcut = minimum sample count cutoff for available expr data (after filtering inf values) 
-# anno450subset = pre-filtered subset of HM450 annotation to use (ie. for promoters use anno[grep("TSS",anno$UCSC_RefGene_Group),])
+# annohm450 = HM450 annotation (all probes should also be available in gset)
 # probelist = probes to use in investigation
 # testgenes = list or vector of character gene identifiers to test for correlation
 # totlen = end index on testgenes, must be less than length(testgenes)
@@ -16,7 +16,7 @@
 # exprnames = optionally take subset 
 
 exprmethyCor <- function(cormethod="spearman",nprobecut=3,nsampcut=15,
-                         anno450subset=anno450hm, probelist=promoterprobes,
+                         annohm450=anno450hm,
                          testgenes=testgenes.hm,totlen=length(testgenes.hm),startlen=1,
                          exprset,gset){
   # error messages
@@ -26,20 +26,17 @@ exprmethyCor <- function(cormethod="spearman",nprobecut=3,nsampcut=15,
   if(startlen>totlen){
     return(message("ERROR: startlen is greater than totlen."))
   }
-  if(!length(intersect(colnames(exprset),colnames(ghm)))>1){
+  if(!length(intersect(colnames(exprset),colnames(gset)))>1){
     return(message("ERROR: not enough shared samples in methylation and expression sets to perform correlations!"))
   }
-
+  
   testcor.hm <- as.data.frame(matrix(nrow=totlen,ncol=7)) 
   colnames(testcor.hm) <- c("gene","nsample.expr","n450probes","cor.estimate","cor.praw",
-                          "meanexpr.log2fc","meanmethy")
-  anno450subset.old <- anno450subset
-  anno450subset <- anno450subset[rownames(anno450subset) %in% probelist,]
-  message("using ",nrow(anno450subset)," of ",nrow(anno450subset.old)," probes for correlation tests...")
+                            "meanexpr.log2fc","meanmethy")
   
   for(i in startlen:totlen){
     genei <- testgenes[i]; testcor.hm[i,1] <- genei # col1
-    annoi <- anno450subset[grep(genei,anno450subset$UCSC_RefGene_Name),]
+    annoi <- annohm450[grep(genei,annohm450$UCSC_RefGene_Name),]
     
     expri <- exprset[rownames(exprset)==genei,]; expri <- expri[!is.infinite(expri)]
     exprnames.i <- names(expri)
@@ -57,16 +54,16 @@ exprmethyCor <- function(cormethod="spearman",nprobecut=3,nsampcut=15,
       testcor.hm[i,5] <- round(cori$p.value,5) # col5
       testcor.hm[i,6] <- round(mean(expri),5) # col6
       testcor.hm[i,7] <- round(mean(methy),5) # col7
-  } 
+    } 
     if(!cond1){
       message("min hm450 probe count ",nprobecut," not met for gene ",i,", skipping cortest...")  
-      }
+    }
     if(!cond2){
       message("min expression sample count ",nsampcut," not met for gene ",i,", skipping cortest...")  
-      }
+    }
     message("completed ",i," of ",totlen," total (",round(100*(i/totlen),3),"%)")
-
+    
   }
   return(testcor.hm)
-
+  
 }
