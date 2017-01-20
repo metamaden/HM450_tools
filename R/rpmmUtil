@@ -1,0 +1,85 @@
+# RPMM function
+# author: SKM
+# description: grab RPMM clusters for easy storage and heatmap visualization
+
+rpmmUtil <- function(gset,mvps,returnoption=c("mgrp","mgrp.hm"),
+                    hm.main = NULL, row.main="EAC MVPs (N = 1033)",showmainlegend=TRUE, 
+                    showannolegend=TRUE, mainlegendname="Beta-value",
+                    annolegendname="rpmm cluster"){
+  require("ComplexHeatmap")
+  require("RPMM")
+  require("minfi)
+  
+  bval <- as.matrix(getBeta(gset[rownames(gset) %in% mvps,])) 
+  rpmm <- blcTree(t(bval), verbose = 0,
+                  splitCriterion = blcSplitCriterionLevelWtdBIC)
+  rpmmClass <- blcTreeLeafClasses(rpmm)
+  
+  a <- lapply(levels(rpmmClass), function(k) {colnames(bval)[which(rpmmClass == k)]}) # assign sample IDs from bval colnames
+  names(a) <- levels(rpmmClass)
+  m <- matrix(as.character(unlist(a)))
+  
+  # clu matrix dimensions contingent on cluster count (ie. 4x clusters shown below)
+  x <- names(a)
+  message("N = ",length(a)," clusters")
+  if(length(x)==4){
+    message("4 clusters, returning cluster assignments...")
+    clu <- matrix(c(rep(names(a)[[1]],length(a[[1]])),
+                    rep(names(a)[[2]], length(a[[2]])),
+                    rep(names(a)[[3]], length(a[[3]])),
+                    rep(names(a)[[4]], length(a[[4]]))))
+    sampleid <- unlist(a)
+    returndf <- data.frame(sampleid,clu); rownames(returndf)<-NULL
+  }
+  if(returnoption=="mgrp"){
+    returndf$mlvl <- NA
+    for(i in 1:4){
+      whichgrpi <- which(colnames(bval) %in% as.character(returndf[returndf[,2]==x[i],1]))
+      returndf[returndf[,2]==x[i],]$mlvl <- mean(rowMeans(bval[,whichgrpi]))
+    }
+  }
+  if(returnoption=="mgrp.hm"){
+    returndf$mlvl <- NA
+    for(i in 1:4){
+      whichgrpi <- which(colnames(bval) %in% as.character(returndf[returndf[,2]==x[i],1]))
+      returndf[returndf[,2]==x[i],]$mlvl <- mean(rowMeans(bval[,whichgrpi]))
+    }
+    rpmmdf <- returndf; rpmmdf$mlvl <- as.factor(rpmmdf$mlvl)
+    mgrplvl <- levels(rpmmdf$mlvl)
+    col <- c(); mcol <- c("lightblue","gray","coral","yellow")
+    for(i in 1:4){
+      repi <- nrow(rpmmdf[rpmmdf$mlvl==mgrplvl[i],])
+      col<-c(col,rep(mcol[i],repi))
+    }; rpmmdf$mcol <- col
+    rpmmdf[,1] <- as.character(rpmmdf[,1]); 
+    tbval <- as.data.frame(t(bval[,order(match(colnames(bval),rpmmdf[,1]))])); 
+    identical(rownames(tbval),rpmmdf[,1]); tbval$mcol <- rpmmdf$mcol
+    
+    # make heatmap, arguments: hm.main, row.main, mainlegendname, annoname, showmainlegend, showannolegend=FALSE
+    hmsort <- order(match(tbval$mcol,mcol),rowMeans(tbval[,1:nrow(bval)]))
+    hmval <- t(tbval[1:ncol(bval),1:nrow(bval)]); 
+    hmval <- hmval[,order(colMeans(hmval))]
+    colside <- as.character(rpmmdf[order(match(rpmmdf$mcol,tbval$mcol)),]$clu); 
+    colside <- colside[order(colMeans(hmval))]
+    breaks=seq(0,1,0.01)
+    hmcol = colorRamp2(breaks,colorRampPalette(c("darkblue","yellow"))(n=length(breaks)))
+    
+    ha = HeatmapAnnotation(df = data.frame(rpmmgrp=as.character(colside)), 
+                           col = list(rpmmgrp = c("rLL" =  "lightblue", "rLR" = "gray","rRL" = "coral","rRR" = "yellow")),
+                           show_legend = showannolegend,
+                           name = annolegendname)
+    
+    hm1 <- Heatmap(hmval[,order(colMeans(hmval))],
+                   col=hmcol,
+                   cluster_columns=FALSE,
+                   show_heatmap_legend = showmainlegend,
+                   show_row_names = FALSE,
+                   show_column_names = FALSE,
+                   top_annotation = ha,
+                   name=mainlegendname,
+                   column_title = hm.main,
+                   row_title = row.main)
+  }
+  
+  return(list(returndf,hm1))
+}
