@@ -5,29 +5,27 @@
 rpmmUtil <- function(gset,mvps,returnoption=c("mgrp","mgrp.hm"),
                     hm.main = NULL, row.main="EAC MVPs (N = 1033)",showmainlegend=TRUE, 
                     showannolegend=TRUE, mainlegendname="Beta-value",
-                    annolegendname="rpmm cluster"){
+                    annolegendname="rpmm cluster",mvp.orderlist=NULL){
   require("ComplexHeatmap")
   require("RPMM")
-  require("minfi)
-  
   bval <- as.matrix(getBeta(gset[rownames(gset) %in% mvps,])) 
+  message("Running RPMM..")
   rpmm <- blcTree(t(bval), verbose = 0,
                   splitCriterion = blcSplitCriterionLevelWtdBIC)
   rpmmClass <- blcTreeLeafClasses(rpmm)
-  
   a <- lapply(levels(rpmmClass), function(k) {colnames(bval)[which(rpmmClass == k)]}) # assign sample IDs from bval colnames
   names(a) <- levels(rpmmClass)
   m <- matrix(as.character(unlist(a)))
   
   # clu matrix dimensions contingent on cluster count (ie. 4x clusters shown below)
   x <- names(a)
-  message("N = ",length(a)," clusters")
+  message("N = ",length(a)," clusters, continuing if 4 clusters present..")
   if(length(x)==4){
     message("4 clusters, returning cluster assignments...")
     clu <- matrix(c(rep(names(a)[[1]],length(a[[1]])),
-                    rep(names(a)[[2]], length(a[[2]])),
-                    rep(names(a)[[3]], length(a[[3]])),
-                    rep(names(a)[[4]], length(a[[4]]))))
+             rep(names(a)[[2]], length(a[[2]])),
+             rep(names(a)[[3]], length(a[[3]])),
+             rep(names(a)[[4]], length(a[[4]]))))
     sampleid <- unlist(a)
     returndf <- data.frame(sampleid,clu); rownames(returndf)<-NULL
   }
@@ -38,48 +36,79 @@ rpmmUtil <- function(gset,mvps,returnoption=c("mgrp","mgrp.hm"),
       returndf[returndf[,2]==x[i],]$mlvl <- mean(rowMeans(bval[,whichgrpi]))
     }
   }
-  if(returnoption=="mgrp.hm"){
-    returndf$mlvl <- NA
+  returndf$mlvl <- NA
     for(i in 1:4){
       whichgrpi <- which(colnames(bval) %in% as.character(returndf[returndf[,2]==x[i],1]))
       returndf[returndf[,2]==x[i],]$mlvl <- mean(rowMeans(bval[,whichgrpi]))
     }
     rpmmdf <- returndf; rpmmdf$mlvl <- as.factor(rpmmdf$mlvl)
     mgrplvl <- levels(rpmmdf$mlvl)
-    col <- c(); mcol <- c("lightblue","gray","coral","yellow")
+    col <- c(); mcol <- c("MM","LM","IM","HM")
     for(i in 1:4){
       repi <- nrow(rpmmdf[rpmmdf$mlvl==mgrplvl[i],])
       col<-c(col,rep(mcol[i],repi))
     }; rpmmdf$mcol <- col
     rpmmdf[,1] <- as.character(rpmmdf[,1]); 
-    tbval <- as.data.frame(t(bval[,order(match(colnames(bval),rpmmdf[,1]))])); 
-    identical(rownames(tbval),rpmmdf[,1]); tbval$mcol <- rpmmdf$mcol
-    
+    tbval <- as.data.frame(t(bval[,order(match(colnames(bval),rpmmdf[,1]))]));
+    if(!is.null(mvp.orderlist)){
+      if(!length(intersect(mvp.orderlist,as.character(colnames(tbval))))==ncol(tbval)){
+        return("ERROR: mvp.orderlist does not match bval probes.")
+      }
+      message("ordering probes on provided mvp list..")
+      tbval <- tbval[,order(match(colnames(tbval),as.character(mvp.orderlist)))]
+      if(!identical(colnames(tbval),mvp.orderlist)){
+        return(message("ERROR: Matching order of probes to mvp list unsuccessful."))
+      } else{
+        # mvp IDs to be stored in return list
+        return.mvplist = mvp.orderlist
+      }
+    } else{
+      tbval <- tbval[,order(colMeans(tbval))]
+      # mvplist to be stored in returned list
+      message("ordering probes on mean values..")
+      return.mvplist <- colnames(tbval)
+    }
+    if(identical(rownames(tbval),rpmmdf[,1])){
+      tbval$mcol <- rpmmdf$mcol
+    } else{
+      return("ERROR: could not match rpmmdf and tbval samples!")
+    }
     # make heatmap, arguments: hm.main, row.main, mainlegendname, annoname, showmainlegend, showannolegend=FALSE
-    hmsort <- order(match(tbval$mcol,mcol),rowMeans(tbval[,1:nrow(bval)]))
-    hmval <- t(tbval[1:ncol(bval),1:nrow(bval)]); 
-    hmval <- hmval[,order(colMeans(hmval))]
-    colside <- as.character(rpmmdf[order(match(rpmmdf$mcol,tbval$mcol)),]$clu); 
-    colside <- colside[order(colMeans(hmval))]
-    breaks=seq(0,1,0.01)
-    hmcol = colorRamp2(breaks,colorRampPalette(c("darkblue","yellow"))(n=length(breaks)))
+    hmval <- t(tbval[1:ncol(bval),1:nrow(bval)])
+    message("ordering samples on mean methylation..")
+    hmval <- hmval[,order(colMeans(hmval))]; rpmmdf <- rpmmdf[order(match(rpmmdf[,1],colnames(hmval))),]
+    if(!identical(rpmmdf$sampleid,as.character(colnames(hmval)))){
+      return(message("ERROR: reordering hmval map on sample means failed.."))
+    }
     
-    ha = HeatmapAnnotation(df = data.frame(rpmmgrp=as.character(colside)), 
-                           col = list(rpmmgrp = c("rLL" =  "lightblue", "rLR" = "gray","rRL" = "coral","rRR" = "yellow")),
+    colside <- as.character(rpmmdf$clu)
+    message("Relation of mean mgrp methylation to RPMM label:\n",print(table(colside,rpmmdf$mlvl)),"\n")
+    
+    colside <- colside[order(colMeans(hmval))]; colside2 <- as.character(colside) 
+    colside2[colside2=="rLL"]<-"MM"; colside2[colside2=="rLR"]<-"LM"; colside2[colside2=="rRL"]<-"IM";colside2[colside2=="rRR"]<-"HM"
+    message("Relation of RPMM and msubtype labels\n",print(table(colside,colside2)),"\n")
+    
+    ha = HeatmapAnnotation(df = data.frame(rpmmgrp=as.character(colside2)), 
+                           col = list(rpmmgrp = c("MM" =  "lightblue", "LM" = "gray","IM" = "coral","HM" = "yellow")),
                            show_legend = showannolegend,
                            name = annolegendname)
-    
-    hm1 <- Heatmap(hmval[,order(colMeans(hmval))],
+    breaks=seq(0,1,0.01)
+    hmcol = colorRamp2(breaks,colorRampPalette(c("darkblue","yellow"))(n=length(breaks)))
+    # heatmap to be stored in returned list
+    hm1 <- Heatmap(hmval,
                    col=hmcol,
                    cluster_columns=FALSE,
+                   column_dend_reorder = FALSE,
+                   row_dend_reorder = FALSE,
+                   cluster_rows = FALSE,
                    show_heatmap_legend = showmainlegend,
                    show_row_names = FALSE,
                    show_column_names = FALSE,
                    top_annotation = ha,
                    name=mainlegendname,
-                   column_title = hm.main,
+                   column_title = hm.main,  
                    row_title = row.main)
-  }
-  
-  return(list(returndf,hm1))
+
+    return1 <- list(returndf,hm1,return.mvplist); names(return1) <- c("rpmm_mgrpdf","heatmap","mvplist.hmorder")
+    return(return1)
 }
