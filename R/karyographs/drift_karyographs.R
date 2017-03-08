@@ -7,7 +7,7 @@ library(GenomicRanges)
 library(minfi)
 
 #==========================================
-# karyograph with actual island drift data
+# karyograph with island drift data
 #==========================================
 
 load("out.be64.rda")
