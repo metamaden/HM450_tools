@@ -40,7 +40,7 @@ mRgnSummary <- function(testgenes,annohm450,testvar,gset,nprobecutoff=3,
   }
   #
   for(i in 1:maxrange){
-    genei <- testgenes[i]; return.methylvl[i,1] <- genei # genename col1
+    genei <- paste0("(^|;)",testgenes[i],"(;.|$)"); return.methylvl[i,1] <- genei # genename col1
     probesi <- rownames(annohm450[grep(genei, annohm450$UCSC_RefGene_Name),]); return.methylvl[i,2]<-length(probesi) # nprobes col2
     betamethy.tn <- getBeta(gset[rownames(gset) %in% probesi,])
     has.na.probe <- mean(apply(betamethy.tn,2,function(x){length(x[is.na(x)])}))
