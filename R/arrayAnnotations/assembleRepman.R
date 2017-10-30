@@ -22,4 +22,11 @@ for(i in 1:length(cpg)){
 df1$cpg <- cpgrep
 save(df1,file="df-a_int1.rda")
 
+df.anno <- df1
+str <- paste(df.anno$accession,df.anno$name,df.anno$group,df.anno$cpg)
+df.anno <- df.anno[which(!duplicated(str)),]; dim(df.anno)
+
+repman450 <- df.anno
+save(repman450,file="repman_hm450.rda")
+
 ###
